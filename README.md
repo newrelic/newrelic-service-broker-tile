@@ -1,8 +1,8 @@
-# newrelic-pcf-java-agent-tile
+# newrelic-pcf-agent-tile
 ==========================================================
 - - -
 
-This repository contains a Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic java agent with your java applications in PCF on-prem environment. It support Ops Mgr 1.4 on vSphere and AWS environments, and it also supports Ops Mgr 1.3 on vSphere.
+This repository contains a Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment. It support Ops Mgr 1.4 on vSphere and AWS environments, and it also supports Ops Mgr 1.3 on vSphere.
 
 
 ##Prerequisites
@@ -36,7 +36,7 @@ Once the tile is uploaded to PCF environment:
 *    Once changes are applied, the tile will appear in the **"Marketplace"**
 
 
-## Use New Relic java agent Tile in PCF
+## Use New Relic agent Tile in PCF
 
 *    Login to your PCF console
 *    Select your **"Org"** (or create new **"Org"** and **"Space"** as you wish)

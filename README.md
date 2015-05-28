@@ -2,7 +2,7 @@
 ==========================================================
 - - -
 
-This repository contains a Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment. It support Ops Mgr 1.4 on vSphere and AWS environments, and it also supports Ops Mgr 1.3 on vSphere.
+This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for Ops Mgr 1.4 on vSphere and AWS environments, and it also supports Ops Mgr 1.3 on vSphere.
 
 
 ##Prerequisites

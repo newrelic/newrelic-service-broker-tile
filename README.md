@@ -7,7 +7,7 @@ This repository contains the Pivotal Cloud Foundry Tile that allows you to autom
 
 ##Prerequisites
 
-*    One or more New Relic accounts/sub-accounts
+*    One or more New Relic accounts/sub-accounts. If you don't have one, feel free to grab one using this link: http://newrelic.com/pivotal.
 *    A New Relic valid license key for each account/sub-account. You can obtain the license key for each account from your New Relic account under 'Account Settings'
 *    An on-prem Pivotal Cloud Foundry environment with Ops Mgr privileges
 

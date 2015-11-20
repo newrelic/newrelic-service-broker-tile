@@ -71,14 +71,14 @@ After Binding the New Relic service, you will need to restage your application.
 *    Login to your New Relic account to check the health of the application
 
 
-**Note:** If you're using a proxy across all of your applications, you may want to implement a PCF 'Environment Variable Group'.
+**Note:** If you're using a proxy across all of your applications, you may want to implement a PCF 'Environment Variable Group' for the staging process.
 ```
-$ cf srevg '{"JAVA_OPTS":"-Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn"}'
+$ cf ssevg '{"JAVA_OPTS":"-Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn"}'
 Setting the contents of the running environment variable group as admin...
 OK
 ```
 ```
-$ cf revg
+$ cf sevg
 Retrieving the contents of the running environment variable group as admin...
 OK
 Variable Name   Assigned Value

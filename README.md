@@ -10,7 +10,7 @@ This repository contains the Pivotal Cloud Foundry Tile that allows you to autom
 *    One or more New Relic accounts/sub-accounts. If you don't have one, feel free to grab one using this link: http://newrelic.com/pivotal.
 *    A New Relic valid license key for each account/sub-account. You can obtain the license key for each account from your New Relic account under 'Account Settings'
 *    An on-prem Pivotal Cloud Foundry environment with Ops Mgr privileges
-
+*    Proxy host and port details if your PCF environment is behind a firewall
 
 ##Installation
 
@@ -48,9 +48,21 @@ Once the tile is uploaded to PCF environment:
 *    Select the **"application"** to which to bind the service
 *    Click the **"Add"** button
 
-## Restaging the Application
-In rare cases you might need to restage the application.
-*    From your system connect to CF
+
+## Bind the New Relic Service to your application in PCF
+
+*    Login to PCF
+*    Navigate to your application
+*    In the tabs at the bottom select 'Services'
+*    Click the '+ Bind a Service' link and bind your New Relic Service to your application
+*    If you need to use a proxy, add the following 'Env Variables' to your application:
+```
+JAVA_OPTS="-Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn"
+```
+
+## Restage your Application
+After Binding the New Relic service, you will need to restage your application.
+*    Login to your PCF Instance:
     *    cf api **\<CF_API_ENDPOINT\>** [--skip-ssl-validation]
     *    cf login -u **\<USER\>** -p **\<PASSWORD\>**
     *    **Note:** if you have multiple **"Org"** and/or **"Space"** in your PCF, it will prompt you to select the desired org and space
@@ -59,6 +71,21 @@ In rare cases you might need to restage the application.
 *    Login to your New Relic account to check the health of the application
 
 
-**Note:** After the initial time that the service is added to the space, you can just go to the intended space, scroll down to the bottom of the page, select **"Services"** tab, and click on **"+Bind a Service"** button to use the previously added service.
+**Note:** If you're using a proxy across all of your applications, you may want to implement a PCF 'Environment Variable Group'.
+```
+$ cf srevg '{"JAVA_OPTS":"-Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn"}'
+Setting the contents of the running environment variable group as admin...
+OK
+```
+```
+$ cf revg
+Retrieving the contents of the running environment variable group as admin...
+OK
+Variable Name   Assigned Value
+JAVA_OPTS           -Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn
+```
+This will enable you to set the JAVA_OPTS parameters on a more global basis such that all applications would inherit the settings without the need to add application level settings to each application.   You can find more details on that here:
+https://docs.pivotal.io/pivotalcf/devguide/deploy-apps/environment-variable.html#evgroups
+
 
 

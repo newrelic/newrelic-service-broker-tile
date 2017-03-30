@@ -2,7 +2,9 @@
 ==========================================================
 - - -
 
-This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.5 (universally), for OpsMgr 1.4 (on vSphere or AWS), and OpsMgr 1.3 (on vSphere).  
+This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.5 (universally), for OpsMgr 1.4 (on vSphere or AWS), and OpsMgr 1.3 (on vSphere). 
+
+The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr1.8-v1.8.0.pivotal** supports PCF versions 1.8, 1.9, and 1.10. 
 
 
 ##Prerequisites

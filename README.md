@@ -2,9 +2,11 @@
 ==========================================================
 - - -
 
-This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.5 (universally), for OpsMgr 1.4 (on vSphere or AWS), and OpsMgr 1.3 (on vSphere). 
+This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.7, 1.8, 1.9, and 1.10. 
 
-The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr1.9-v1.9.0.pivotal** supports PCF versions 1.8, 1.9, and 1.10. **Note:** New Relic tile version 1.9 is identical to version 1.8. The only difference is the version numbers (1.8 vs. 1.9). This is for version number compatibility with PCF version numbers.
+The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr1.9-v1.9.1.pivotal** supports PCF versions 1.8, 1.9, and 1.10.
+
+Refer to [New Relic Service Broker for PCF](http://docs.pivotal.io/partners/newrelic/index.html) for details on installation and configuration.
 
 
 ##Prerequisites
@@ -86,8 +88,7 @@ OK
 Variable Name   Assigned Value
 JAVA_OPTS           -Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn
 ```
-This will enable you to set the JAVA_OPTS parameters on a more global basis such that all applications would inherit the settings without the need to add application level settings to each application.   You can find more details on that here:
-https://docs.pivotal.io/pivotalcf/devguide/deploy-apps/environment-variable.html#evgroups
-
+This will enable you to set the JAVA_OPTS parameters on a more global basis such that all applications would inherit the settings without the need to add application level settings to each application.   You can find more details on 
+[Environment Variable Groups](https://docs.pivotal.io/pivotalcf/devguide/deploy-apps/environment-variable.html#evgroups)
 
 

@@ -2,9 +2,9 @@
 ==========================================================
 - - -
 
-This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.7, 1.8, 1.9, and 1.10. 
+This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.7 to 1.11.
 
-The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr1.9-v1.9.1.pivotal** supports PCF versions 1.8, 1.9, and 1.10.
+The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr-v1.11.0.pivotal** supports PCF versions 1.7 to 1.11.
 
 Refer to [New Relic Service Broker for PCF](http://docs.pivotal.io/partners/newrelic/index.html) for details on installation and configuration.
 
@@ -21,7 +21,7 @@ Refer to [New Relic Service Broker for PCF](http://docs.pivotal.io/partners/newr
 *    Download the New Relic Service Broker Tile for your environment (vSphere/AWS) and version (1.3/1.4) of Ops Mgr from this repo
 *    Login to your PCF Ops Mgr 
 *    On the left side of the page click on the button **"Import a Product"**
-*    Select the downloaded **.pivotal** tile file (i.e. NewRelic-Broker-v1.0.0-vSphere-OpsMgrv1.4.pivotal)
+*    Select the downloaded **.pivotal** tile file (i.e. NewRelic-ServiceBrokerTile-OpsMgr-v1.11.0.pivotal)
 *    Allow the file upload to be completed
 
 **Note:** The system doesn't give you any indications during the upload, but you will get a pop-up message at the end, as to whether the upload succeeded ot failed.
@@ -29,7 +29,7 @@ Refer to [New Relic Service Broker for PCF](http://docs.pivotal.io/partners/newr
 
 Once the tile is uploaded to PCF environment:
 
-*    Hover your mouse on **"Newrelic Service Broker v-x.x.x"** on the left side under **"Available Products"**, and select the **"Add"** button to add the tile
+*    Hover your mouse on **"Newrelic Service Broker v-x.x.x"** on the left side under **"Available Products"**, and select the **"+"** sign or **"Add"** button to add the tile
 *    Click on New Relic Tile that was just added to the page
 *    Under **"Settings"** tab select **"Service Broker Application"**
 *    For every account or sub-account you want to add click the **"Add"** button on the right side

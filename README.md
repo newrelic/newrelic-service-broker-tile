@@ -4,14 +4,14 @@
 
 This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.9 to 1.11.
 
-The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr-v1.11.1.pivotal** supports PCF versions 1.9 to 1.11.
+The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr-v1.11.3.pivotal** supports PCF versions 1.9 to 1.11.
 
 <p class="note warning"><strong>WARNING</strong>: The current tile removes the <code>all_open</code> security group from the tile default security settings.
 If you are using a previous versions of the tile, make your PCF environment more secure by
 removing the <code>all_open</code> security group from the Application Security Group (ASG) settings. 
 The new version of the tile does not open the security, nor does it close the security if it was already open.</p>
 
-<p class="note warning"><strong>NOTE</strong>: In version 1.11.1 removed the minor version number from stemcell criteria to allow users to apply stemcell security patches.
+<p class="note warning"><strong>NOTE</strong>: In version 1.11.3 removed the minor version number from stemcell criteria to allow users to apply stemcell security patches, and fixed discrepancy between the tile version and version number displayed on the tile.
 
 
 
@@ -27,10 +27,10 @@ Refer to [New Relic Service Broker for PCF](http://docs.pivotal.io/partners/newr
 
 ##Installation
 
-*    Download the New Relic Service Broker Tile for your environment (vSphere/AWS) and version (1.11.1) of Ops Mgr from this repo
+*    Download the New Relic Service Broker Tile for your environment (vSphere/AWS) and version (1.11.3) of Ops Mgr from this repo
 *    Login to your PCF Ops Mgr 
 *    On the left side of the page click on the button **"Import a Product"**
-*    Select the downloaded **.pivotal** tile file (i.e. NewRelic-ServiceBrokerTile-OpsMgr-v1.11.1.pivotal)
+*    Select the downloaded **.pivotal** tile file (i.e. NewRelic-ServiceBrokerTile-OpsMgr-v1.11.3.pivotal)
 *    Allow the file upload to be completed
 
 **Note:** The system doesn't give you any indications during the upload, but you will get a pop-up message at the end, as to whether the upload succeeded ot failed.

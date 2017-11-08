@@ -4,9 +4,11 @@
 
 This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.9 to 1.12.
 
-The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr-v1.12.2.pivotal** supports PCF versions 1.9 to 1.11. 
+The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr-v1.12.3.pivotal** supports PCF versions 1.9 to 1.12. 
 
-<p class="note warning"><strong>WARNING</strong>: If you are upgrading from an older version of the tile, you need to remove the old service instances, service offerings, service broker, and the org for the old tile.</p>
+<p class="note warning"><strong>WARNING</strong>: Version **1.12.3** of the tile supports upgrades from 1.11.4.</p>
+
+<p class="note warning"><strong>WARNING</strong>: If you are upgrading to tile version 1.12.0 from an older version of the tile, you need to remove the old service instances, service offerings, service broker, and the org for the old tile.</p>
 
 <p class="note warning"><strong>WARNING</strong>: The current tile removes the <code>all_open</code> security group from the tile default security settings.
 If you are using a previous versions of the tile, make your PCF environment more secure by
@@ -31,10 +33,10 @@ Refer to [New Relic Service Broker for PCF](http://docs.pivotal.io/partners/newr
 
 ##Installation
 
-*    Download the New Relic Service Broker Tile for your environment (vSphere/AWS) and version (1.11.3) of Ops Mgr from this repo
+*    Download the New Relic Service Broker Tile for PCF for your environment from this repo
 *    Login to your PCF Ops Mgr 
 *    On the left side of the page click on the button **"Import a Product"**
-*    Select the downloaded **.pivotal** tile file (i.e. NewRelic-ServiceBrokerTile-OpsMgr-v1.11.3.pivotal)
+*    Select the downloaded **.pivotal** tile file (i.e. NewRelic-ServiceBrokerTile-OpsMgr-v1.12.3.pivotal)
 *    Allow the file upload to be completed
 
 **Note:** The system doesn't give you any indications during the upload, but you will get a pop-up message at the end, as to whether the upload succeeded ot failed.

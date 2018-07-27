@@ -51,7 +51,11 @@ Once the tile is uploaded to PCF environment:
 *    For every account or sub-account you want to add click the **"Add"** button on the right side
 *    Enter **"Plan Name"**, **"Plan Description"**, and your **"New Relic license key"** for each account/sub-account
 *    If the plans were created in service broker version 1.12.12 or older, you need to provide the original **"plan guid"**. You can obtain the original plan guids for existing plan from 1.12.12 or older version of the service broker by running the following **"cf"** command at the operating system prompt of your computer:
+```
 		cf curl $(cf curl /v2/services?q=label:newrelic | grep "service_plans_url" | awk '{print $2}' | sed 's/[",]//g') | egrep "\"name\":|\"unique_id\":" | sed 's/[\",]//g' | tr -s " " | awk ' {name=$0; getline; printf("\t%-40s %-40s\n",name,$0)}'
+```
+
+*    This command will fetch all the existing service plans for New Relic service broker with their original guids. Use these guids in the property name **"Paln Guid Override"**
 *    Once you have entered plans for all desired accounts, and you have added original plan guids as necessary, click the **"Save"** button
 *    Go back to **"Installation Dashboard"** (link on top left of the page)
 *    Click the big blue **"Apply changes"** button on top right of the page. This will take about some time to finish depending how large of a PCF deployment you have.

@@ -4,7 +4,7 @@
 
 This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.9.x to 2.2.x.
 
-The latest version of the tile **NewRelic-ServiceBrokerTile-OpsMgr-v1.12.13.pivotal** supports PCF versions 2.2.x. 
+The latest version of the tile **"NewRelic-ServiceBrokerTile-OpsMgr-v1.12.18.pivotal"** supports PCF versions 2.2.x. 
 
 <p class="note warning"><strong>WARNING</strong>: Version **1.12.3** of the tile supports upgrades from 1.11.4.</p>
 
@@ -50,13 +50,12 @@ Once the tile is uploaded to PCF environment:
 *    click the **"Save"** button and select **"New Relic Service Broker"**
 *    For every account or sub-account you want to add click the **"Add"** button on the right side
 *    Enter **"Plan Name"**, **"Plan Description"**, and your **"New Relic license key"** for each account/sub-account
-*    If the plans were created using service broker version 1.12.12 or older, you need to provide the original **"plan guid"**. You can obtain the original plan guids for plans that were created using older versions of the service broker by running the following **"cf"** command at the operating system prompt of your computer:
+*    New Relic Service Broker 1.12.18 allows users to change New Relic license key in existing service plans. In tile versions 1.12.12 and older the plan unique guids were calculated differently, and in order for the plan services to work properly and not break the compatibility the guids must be the same as before. The <code>"migration script"</code> preserves the plan guids for existing plans in the plans collection for tile 1.12.12 and older. You could see 2 new properties labeled <strong>"pre-1.12.12 plan?"</strong> and  <strong>"Plan Guid Override (broker 1.12.12 or older)"</strong> in the plans collection for each plan in tile configuration. <strong>DO NOT CHANGE</strong> either of these properties, as they get set internally where required. For plans that were created with more recent versions of the tile than 1.12.12, leave <strong>"pre-1.12.12 plan"</strong> unchecked, and <strong>"Plan Guid Override"</strong> blank. <strong>NOTE:</strong> The only case where you need to override the "Plan Guid Override" property is when you have changed the original license key that was associated with the plan creatd by a tile version 1.12.12 or older. You can obtain the original plan guid from Cloud Controler by executing the following command and entering the original guid here in the "Plan Guid Override" property:
 ```
-	cf curl $(cf curl /v2/services?q=label:newrelic | grep "service_plans_url" | awk '{print $2}' | sed 's/[",]//g') | egrep "\"name\":|\"unique_id\":" | sed 's/[\",]//g' | tr -s " " | awk ' {name=$0; getline; printf("\t%-40s %-40s\n",name,$0)}'
+  cf curl $(cf curl /v2/services?q=label:newrelic | grep "service_plans_url" | awk '{print $2}' | sed 's/[",]//g') | egrep "\"name\":|\"unique_id\":" | sed 's/[\",]//g' | tr -s " " | awk ' {name=$0; getline; printf("\t%-40s %-40s\n",name,$0)}'
 ```
 
-*    This command will fetch all the existing service plans for New Relic service broker with their original guids. Use these guids in the property name **"Paln Guid Override"**. You only need to enter the original guids for plans that were created with service broker 1.12.12 or earlier. For plans that were created later leave this field blank.
-*    Once you have entered plans for all desired accounts, and you have added original plan guids as necessary, click the **"Save"** button
+*    Once you have entered plans for all desired accounts, click the **"Save"** button
 *    Go back to **"Installation Dashboard"** (link on top left of the page)
 *    Click the big blue **"Apply changes"** button on top right of the page. This will take some time to finish depending how large of a PCF deployment you have.
 *    Once changes are applied, the tile will appear in the **"Marketplace"**

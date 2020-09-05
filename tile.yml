@@ -1,0 +1,749 @@
+---
+# The high-level description of your tile.
+# Replace these properties with real values.
+#
+name: newrelic-broker # By convention lowercase with dashes
+icon_file: resources/images/nr-128x128.png
+label: New Relic Service Broker
+description: New Relic Service Broker - Bind your app to New Relic service to monitor the performance.
+metadata_version: 2.0 ## 1.9 # uncommented 11-16-17 & chgd from 1.12 to 1.11  # Optional, defaults to 1.5
+org: NewRelicServiceBroker-service-org
+space: NewRelicServiceBroker-service-space
+
+packages:
+- name: newrelic-broker
+  type: app-broker
+  label: New Relic Service Broker
+  enable_global_access_to_plans: true
+  manifest:
+    host: newrelic-sb
+    buildpack: java_buildpack_offline
+    path: target/new-relic-service-broker.jar
+    instances: 1
+    memory: 1024M
+  pre_deploy: |
+    ### --------------------------------------------------------------
+    ### get sb version numeric value for comparison -- 1.12.9 -> 1001012009
+    function sb_numeric_version() {
+        arg=`echo "$1" | sed 's/\([0-9]+(\.[0-9]+)*\)/\1/'`
+        local IFS=.
+        local i v1="1" ver=($arg)
+        for i in ${ver[@]}
+        do
+            v1="${v1}`echo $((1000+${i})) | cut -c2-`"
+        done
+        echo $v1
+    }
+    ### --------------------------------------------------------------
+
+    ### --------------------------------------------------------------
+    ### get the current version of service broker
+    function get_current_sb_version() {
+      ${CF} target -o ${CF_ORG} -s ${CF_SPACE} > /dev/null 2>&1
+      local _apps=(`$CF apps | grep 'newrelic-broker' | awk '{print substr($1,17)}'`)
+      local _c=0
+      local _CURRENT_SB_VERSION=""
+      local _v
+      for _v in "${_apps[@]}"
+      do
+        _c="$(expr $_c + 1)"
+        if [ "$_c" -gt "1" ]; then
+          if [ `sb_numeric_version ${_v}` -gt `sb_numeric_version ${_CURRENT_SB_VERSION}` ]; then
+            _CURRENT_SB_VERSION=${_v}
+          fi
+        else
+          _CURRENT_SB_VERSION="${_v}"
+        fi
+      done
+      echo "${_CURRENT_SB_VERSION}"
+    }
+    ### --------------------------------------------------------------
+    ### --------------------------------------------------------------
+    ### --------------------------------------------------------------
+    ### use the following 2 values to manipulate older version of service broker app
+    OLD_SB_APP_NAME=`$CF apps | grep "^newrelic-broker-" | awk '{print $1}'`
+    OLD_SB_APP_VERSION=`echo ${OLD_SB_APP_NAME##*-}`
+    echo "### existing service beoker app name: $OLD_SB_APP_NAME   ---   existing version: $OLD_SB_APP_VERSION"
+    ### --------------------------------------------------------------
+
+    ### at this point in execution APP_NAME and BROKER_NAME are not set - grab from their values script source
+    APPNAME=`grep "^export APP_NAME" $0| awk -F= '{print $2}'`
+    BROKERNAME=`grep "^export BROKER_NAME" $0| awk -F= '{print $2}'`
+    ### --------------------------------------------------------------
+
+    ### show current settings - 
+    echo "starting pre_deploy..."
+    echo "existing target: `$CF target`"
+    echo "existing apps: `$CF apps`"
+    echo "existing service brokers: `$CF service-brokers`"
+    echo "existing newrelic service_access: `$CF service-brokers | grep newrelic | while read nrsb rest; do $CF service-access -b $nrsb; done`"
+    echo "### ======================================================"
+    ### ------------------------------------------------------------
+
+    CURRENT_SB_VERSION="${TILE_PREVIOUS_VERSION}"
+
+    ### --------------------------------------------------------------
+    ### --------------------------------------------------------------
+
+    ### print existing plan names and unique guids from CC DB
+    if [ `sb_numeric_version ${CURRENT_SB_VERSION}` -le "1001012017" ]; then
+      echo "### list of existing plan names and original unique guids ------"
+      ${CF} curl $(${CF} curl /v2/services?q=label:newrelic | grep "service_plans_url" | awk '{print $2}' | sed 's/[",]//g') | egrep "\"name\":|\"unique_id\":" | sed 's/[\",]//g' | tr -s " " | awk ' {name=$0; getline; printf("\t%-40s %-40s\n",name,$0)}'
+      echo "### ------------------------------------------------------------"
+    fi
+    ### ------------------------------------------------------------
+
+    ### ------------------------------------------------------------
+    ### ------------------------------------------------------------
+    # SK - 11-17-17
+    # SK - 2-19-18 - $CF target -o NewRelicServiceBroker-service-org -s NewRelicServiceBroker-service-space
+
+    ### SK - 11-17-17 - perform this logic only if upgrading 1.12.1->1.12.6, or 1.12.1->1.12.3->1.12.6
+    ### if upgrading and old version has different org and space names, the org and space do not 
+    ### get set to the org and space values set by tile.yml
+    ### set them here if upgrading from 1.12.1 or 1.12.3
+
+    ### 11-17-17 - handle service broker name changes from manual tile to tile generaotr
+    if [ `sb_numeric_version ${CURRENT_SB_VERSION}` -le "1001012006" ]; then
+
+      CURRENT_ORG=`$CF target | grep "^org:" | awk '{print $2}'`
+      if [[ "$CURRENT_ORG" != "NewRelicServiceBroker-service-org" ]]
+      then
+        CURRENT_SPACE=`$CF target | grep "^space:" | awk '{print $2}'`
+
+        CF_ORG="NewRelicServiceBroker-service-org"
+        CF_SPACE="NewRelicServiceBroker-service-space"
+
+        # if org "NewRelicServiceBroker-service-org" exists, rename it first
+        if $CF org $CF_ORG >/dev/null 2>/dev/null; then
+          # TODO - change trget to existing NewRelicServiceBroker-service-org and service-space
+          # for each existing app
+          #   delete app
+          #   delete route
+          # change target again to $CURRENT_ORG and $CURRENT_SPACE
+          $CF rename-org $CF_ORG "$CF_ORG_`date +%Y%m%d%H%M%S`"
+        fi
+
+        if [[ "$CURRENT_SPACE" != "$CF_SPACE" ]]
+        then
+          echo "renaming space from $CURRENT_SPACE to $CF_SPACE"
+          $CF rename-space $CURRENT_SPACE $CF_SPACE
+        fi
+        if [[ "$CURRENT_ORG" != "$CF_ORG" ]]
+        then
+          echo "renaming org from $CURRENT_ORG to $CF_ORG"
+          $CF rename-org $CURRENT_ORG $CF_ORG
+        fi
+      fi
+
+      ### --------------------------------------------------------------
+      # any older service broker that does not have the name pattern *NewRelicServiceBroker*, 
+      # change it to new name "NewRelicServiceBroker*newrelic-broker"
+      ### rename sb app name if necessary
+      if [[ "$APPNAME" != *"NewRelicServiceBroker"* ]]
+      then
+        $CF apps | grep "^NewRelicServiceBroker-" | grep -v "^${APPNAME}" | while read app rest
+        do
+          $CF rename ${app} "${BROKERNAME}-${app}"
+        done
+      fi
+
+      ### --------------------------------------------------------------
+      ### rename sb broker name if necessary
+      if [[ "$BROKERNAME" != *"NewRelicServiceBroker"* ]]
+      then
+        OLD_BROKER=`$CF service-brokers | grep "^NewRelicServiceBroker-v[0-9\.]*-service-broker" | awk '{print $1}'`
+        [ ! -z "${OLD_BROKER}" ] && {
+          $CF rename-service-broker ${OLD_BROKER} ${BROKERNAME}
+        }
+      fi
+    fi 
+
+
+    ### --------------------------------------------------------------
+    ### --------------------------------------------------------------
+
+    ### fix issue with tile generator 12.0.5+ naming
+    ### look for servie broker name with underscore ("_") -- and change it back to dash ("-")
+    if [ `sb_numeric_version ${CURRENT_SB_VERSION}` -gt "1001012009" -a `sb_numeric_version ${CURRENT_SB_VERSION}` -le "1001012017" ]; then
+      echo "looking for service name newrelic_broker and renaming to newerlic-broker if necessary"
+      $CF "service-brokers" | grep "^newrelic_broker" | while read sbname rest
+      do
+        original_sbname=`echo "$sbname" | sed 's/_/-/g'`
+        echo "cf rename-service-broker ${sbname} ${original_sbname}"
+        $CF rename-service-broker ${sbname} ${original_sbname}
+      done
+      echo "### ------------------------------------------------------------"
+    fi
+    ### ------------------------------------------------------------
+
+
+    ### ------------------------------------------------------------
+    ### --------------------------------------------------------------
+  post_deploy: |
+    ### --------------------------------------------------------------
+    ### show settings after new service broker created
+    echo "starting post_deploy..."
+    echo "existing target: `$CF target`"
+    echo "existing apps: `$CF apps`"
+    echo "existing service brokers: `$CF service-brokers`"
+    echo "existing newrelic service_access: `$CF service-brokers | grep newrelic | while read nrsb rest; do $CF service-access -b $nrsb; done`"
+    echo "### ------------------------------------------------------------"
+    ### --------------------------------------------------------------
+
+    ### --------------------------------------------------------------
+    ### logic added to check for GLOBAL_ACCESS flag, and if it's set to "false" 
+    ### then parse each plan for orgs that need to enable-service-access
+    ### this is added because if initially GLOBAL_ACCESS was set to "true" and then was changed to "false
+    ### the tile generator logic does not reset the service-access
+    ### additionally a property "orgs" was added to each plan  so user can enable-service-access only for selected "orgs"
+
+    function get_plans_and_orgs() {
+    mypython=$(which python3)
+    if [ -z $mypython ]
+    then
+      mypython=$(which python2)
+      if [ -z $mypython ]
+      then
+        mypython=$(which python)
+      fi
+    fi
+
+    ${mypython} -c "
+    import json, re, os
+    data = json.loads(os.environ['NRPLANS'])
+    for plan in data:
+      orgCount = 0
+      try:
+        orgCount = len(plan['orgs'])
+      except:
+        orgCount = 0
+      print(plan['planName'] + ':' + ':'.join(re.split('\s*,\s*', plan['orgs'])) if orgCount > 0 else plan['planName'])
+    "
+    }
+
+    # initially disable-service-access for all service plans
+    # then parse through list of orgs for each plan and enable-service-access
+    # if GLOBAL_ACCESS = true skip this routine
+    if ! is_true "$GLOBAL_ACCESS"; then
+      export service_name=`$CF service-access | awk "/^broker: ${BROKER_NAME}$/{flag=1;next}/^broker: /{flag=0}flag" | egrep -v "access *orgs" | grep "."  | awk '{print $1}' | uniq `
+      cf disable-service-access $service_name
+      get_plans_and_orgs | while read line
+      do
+        echo $line | awk -F: '
+          NF > 1 {
+            plan=$1;
+            for(i=2; i<=NF; i++) {
+              org=$i;
+              gsub(/^[ \t]+/, "", org)
+              gsub(/[ \t]+$/, "", org)
+              cf_command=""
+              if (tolower(org) == "all") {
+                cf_command=sprintf("cf enable-service-access %s -p %s", ENVIRON["service_name"], plan)
+                i = NF + 1 # enable-service-access for this plan, and ignore the rest of orgs if any
+              }
+              else if (tolower(org) == "none") {
+                cf_command=sprintf("cf disable-service-access %s -p %s", ENVIRON["service_name"], plan)
+                i = NF + 1 # disable-service-access for this plan, and ignore the rest of orgs if any
+              }
+              else {
+                cf_command=sprintf("cf enable-service-access %s -p %s -o %s", ENVIRON["service_name"], plan, org)
+              }
+              printf("executing \"%s\"\n", cf_command)
+              system(cf_command)
+            }
+          }
+        '
+      done
+    fi
+    ### --------------------------------------------------------------
+    ### --------------------------------------------------------------
+
+# stemcell_criteria:
+#   os: ubuntu-xenial
+#   version: '315'
+#   enable_patch_security_updates: true
+
+forms:
+- name: newrelic-broker-properties
+  label: New Relic Service Broker
+  description: New Relic Service Broker 
+
+  properties:
+  - name: tile_version
+    type: string
+    label: Tile Version
+    default: 1.12.27
+    configurable: false
+  - name: tile_previous_version
+    type: string
+    default: 1.12.8
+    label: Previous Tile Version
+    configurable: false
+  - name: create_open_security_group
+    type: boolean
+    label: Create Open Security Group
+    default: false
+    configurable: false
+
+  - name: servicebroker_serviceid
+    type: string
+    label: Service Broker Service ID
+    default: 1036C6BE-6DC4-4AE4-ABAC-125FDB7C4C2C
+    configurable: false
+  - name: nrplans
+    type: collection
+    label: New Relic Service Plans
+    description: New Relic Plans (each plan associated with an RPM acount)
+    configurable: true
+    property_blueprints:
+    - name: planName
+      type: string
+      configurable: true
+      label: Plan Name
+      description: Name of Plan
+    - name: planDescription
+      type: string
+      configurable: true
+      label: Plan Description
+      description: Description of Plan
+    - name: licenseKey
+      type: string
+      configurable: true
+      label: New Relic License Key
+      description: Associated license key for the Plan
+      constraints:
+      - must_match_regex: '^[^ !@#$%^&*()]*$'
+        error_message: 'Invalid characters for the license key. Please use anything except spaces and special characters "!@#$%^&*()".'
+    - name: oldPlan
+      type: boolean
+      configurable: true
+      default: false
+      label: pre-1.12.12 plan?
+      description: WARNING -- DO NOT CHANGE THIS PROPERTY -- this property is automatically set by the tile if the plan was migrated from tile 1.12.12 or older
+    - name: planOldGuid
+      type: string
+      configurable: true
+      optional: true
+      label: Plan Guid Override (broker 1.12.12 or older)
+      description: WARNING -- DO NOT CHANGE THIS PROPERTY -- this property is automatically set to the original plan guid for plans migrated from tile 1.12.12 or older. Override this guid only if you've changed the original license key for this plan. The value should be the plan unique_id from Cloud Controler. Leave blank for 1.12.13 or above
+
+    - name: rpmAccountId
+      type: string
+      configurable: true
+      optional: true
+      label: New Relic RPM Account Id
+      description: New Relic RPM Account Id that is associated with the license key (if specified, it's used to route Firhose Nozzle data to other RPM accounts)
+    - name: insightsInsertKey
+      type: string
+      configurable: true
+      optional: true
+      label: Insights Insert Key
+      description: Insights Insert Key (if specified, it's used to route Firhose Nozzle data to other RPM accounts)
+    - name: orgs
+      type: string
+      configurable: true
+      optional: true
+      label: List of Allowed Org Names
+      description: List of Allowed Org Names for this plan (used only if global_access set to "false" and you want to restrict use of Service Broker to specific Orgs. if global_access==true, blank = all_orgs --- if global_access==false, blank = none)
+
+  - name: org_quota
+    type: integer
+    label: Org Quota
+    default: 4096
+    configurable: false
+    constraints:
+      min: 1024
+      max: 4096
+  - name: memory
+    type: integer
+    label: Memory
+    default: 1024
+    configurable: false
+    constraints:
+      min: 256
+      max: 1024
+
+migration: |
+  var startDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+  console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ migration script start: ' + startDate);
+  var currentVersion = getCurrentProductVersion();
+  console.log('current service product version: ' + currentVersion);
+  // save currentVersion in the tile
+  properties.properties['.properties.tile_previous_version'] = {
+    type: "string",
+    value: currentVersion
+  }
+
+  console.log('@@@@@@@');
+
+  console.log('existing tile properties:');
+  console.log(properties.properties);
+  console.log('@@@@@@@');
+
+  if (currentVersion == '1.12.2') {
+    console.log('migration script - tile version: v1.12.2');
+    console.log('app ver: ' + properties.properties['.properties.app_version'].value);
+
+    try {
+      console.log('existing tile properties:');
+      console.log(properties.properties);
+    } catch(err) { console.log(err.message);}
+
+    properties.properties['.properties.org_quota'].value = 4096;
+    properties.properties['.properties.memory'].value = 1024;
+
+    if (properties.properties['.properties.on_demand_service_plans_collection'] && !properties.properties['.properties.nrplans']) {
+      var newCollection = [];
+      for (var idx in properties.properties['.properties.on_demand_service_plans_collection'].value) {
+        var oldPlan = properties.properties['.properties.on_demand_service_plans_collection'].value[idx];
+        var newPlan = {
+          guid: oldPlan.guid,
+          planName: oldPlan.plan_name,
+          planDescription: oldPlan.plan_description,
+          licenseKey: oldPlan.license_key
+        }
+        newCollection.push(newPlan);
+      }
+
+      console.log('replacing old plans with new...');
+      try {
+        console.log('adding new nrplans...');
+        properties.properties['.properties.nrplans'] = {value: newCollection};
+      } catch(err) { console.log(err.message);}
+
+      try {
+        console.log('deleting on_demand_service_plans_collection...');
+        delete properties.properties['.properties.on_demand_service_plans_collection'];
+      } catch(err) { console.log(err.message);}
+
+      try {
+        console.log('new tile properties:');
+        console.log(properties.properties);
+      } catch(err) { console.log(err.message);}
+    }
+
+  }
+  console.log('@@@@@@@');
+
+  // md5lib comes from https://github.com/blueimp/JavaScript-MD5
+  function md5lib(input) {
+    function safeAdd(x, y) {
+      var lsw = (x & 0xffff) + (y & 0xffff)
+      var msw = (x >> 16) + (y >> 16) + (lsw >> 16)
+      return (msw << 16) | (lsw & 0xffff)
+    }
+
+    function bitRotateLeft(num, cnt) {
+      return (num << cnt) | (num >>> (32 - cnt))
+    }
+
+    function md5cmn(q, a, b, x, s, t) {
+      return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b)
+    }
+
+    function md5ff(a, b, c, d, x, s, t) {
+      return md5cmn((b & c) | (~b & d), a, b, x, s, t)
+    }
+
+    function md5gg(a, b, c, d, x, s, t) {
+      return md5cmn((b & d) | (c & ~d), a, b, x, s, t)
+    }
+
+    function md5hh(a, b, c, d, x, s, t) {
+      return md5cmn(b ^ c ^ d, a, b, x, s, t)
+    }
+
+    function md5ii(a, b, c, d, x, s, t) {
+      return md5cmn(c ^ (b | ~d), a, b, x, s, t)
+    }
+
+    function binlMD5(x, len) {
+      /* append padding */
+      x[len >> 5] |= 0x80 << (len % 32)
+      x[((len + 64) >>> 9 << 4) + 14] = len
+
+      var i
+      var olda
+      var oldb
+      var oldc
+      var oldd
+      var a = 1732584193
+      var b = -271733879
+      var c = -1732584194
+      var d = 271733878
+
+      for (i = 0; i < x.length; i += 16) {
+        olda = a
+        oldb = b
+        oldc = c
+        oldd = d
+
+        a = md5ff(a, b, c, d, x[i], 7, -680876936)
+        d = md5ff(d, a, b, c, x[i + 1], 12, -389564586)
+        c = md5ff(c, d, a, b, x[i + 2], 17, 606105819)
+        b = md5ff(b, c, d, a, x[i + 3], 22, -1044525330)
+        a = md5ff(a, b, c, d, x[i + 4], 7, -176418897)
+        d = md5ff(d, a, b, c, x[i + 5], 12, 1200080426)
+        c = md5ff(c, d, a, b, x[i + 6], 17, -1473231341)
+        b = md5ff(b, c, d, a, x[i + 7], 22, -45705983)
+        a = md5ff(a, b, c, d, x[i + 8], 7, 1770035416)
+        d = md5ff(d, a, b, c, x[i + 9], 12, -1958414417)
+        c = md5ff(c, d, a, b, x[i + 10], 17, -42063)
+        b = md5ff(b, c, d, a, x[i + 11], 22, -1990404162)
+        a = md5ff(a, b, c, d, x[i + 12], 7, 1804603682)
+        d = md5ff(d, a, b, c, x[i + 13], 12, -40341101)
+        c = md5ff(c, d, a, b, x[i + 14], 17, -1502002290)
+        b = md5ff(b, c, d, a, x[i + 15], 22, 1236535329)
+
+        a = md5gg(a, b, c, d, x[i + 1], 5, -165796510)
+        d = md5gg(d, a, b, c, x[i + 6], 9, -1069501632)
+        c = md5gg(c, d, a, b, x[i + 11], 14, 643717713)
+        b = md5gg(b, c, d, a, x[i], 20, -373897302)
+        a = md5gg(a, b, c, d, x[i + 5], 5, -701558691)
+        d = md5gg(d, a, b, c, x[i + 10], 9, 38016083)
+        c = md5gg(c, d, a, b, x[i + 15], 14, -660478335)
+        b = md5gg(b, c, d, a, x[i + 4], 20, -405537848)
+        a = md5gg(a, b, c, d, x[i + 9], 5, 568446438)
+        d = md5gg(d, a, b, c, x[i + 14], 9, -1019803690)
+        c = md5gg(c, d, a, b, x[i + 3], 14, -187363961)
+        b = md5gg(b, c, d, a, x[i + 8], 20, 1163531501)
+        a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467)
+        d = md5gg(d, a, b, c, x[i + 2], 9, -51403784)
+        c = md5gg(c, d, a, b, x[i + 7], 14, 1735328473)
+        b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734)
+
+        a = md5hh(a, b, c, d, x[i + 5], 4, -378558)
+        d = md5hh(d, a, b, c, x[i + 8], 11, -2022574463)
+        c = md5hh(c, d, a, b, x[i + 11], 16, 1839030562)
+        b = md5hh(b, c, d, a, x[i + 14], 23, -35309556)
+        a = md5hh(a, b, c, d, x[i + 1], 4, -1530992060)
+        d = md5hh(d, a, b, c, x[i + 4], 11, 1272893353)
+        c = md5hh(c, d, a, b, x[i + 7], 16, -155497632)
+        b = md5hh(b, c, d, a, x[i + 10], 23, -1094730640)
+        a = md5hh(a, b, c, d, x[i + 13], 4, 681279174)
+        d = md5hh(d, a, b, c, x[i], 11, -358537222)
+        c = md5hh(c, d, a, b, x[i + 3], 16, -722521979)
+        b = md5hh(b, c, d, a, x[i + 6], 23, 76029189)
+        a = md5hh(a, b, c, d, x[i + 9], 4, -640364487)
+        d = md5hh(d, a, b, c, x[i + 12], 11, -421815835)
+        c = md5hh(c, d, a, b, x[i + 15], 16, 530742520)
+        b = md5hh(b, c, d, a, x[i + 2], 23, -995338651)
+
+        a = md5ii(a, b, c, d, x[i], 6, -198630844)
+        d = md5ii(d, a, b, c, x[i + 7], 10, 1126891415)
+        c = md5ii(c, d, a, b, x[i + 14], 15, -1416354905)
+        b = md5ii(b, c, d, a, x[i + 5], 21, -57434055)
+        a = md5ii(a, b, c, d, x[i + 12], 6, 1700485571)
+        d = md5ii(d, a, b, c, x[i + 3], 10, -1894986606)
+        c = md5ii(c, d, a, b, x[i + 10], 15, -1051523)
+        b = md5ii(b, c, d, a, x[i + 1], 21, -2054922799)
+        a = md5ii(a, b, c, d, x[i + 8], 6, 1873313359)
+        d = md5ii(d, a, b, c, x[i + 15], 10, -30611744)
+        c = md5ii(c, d, a, b, x[i + 6], 15, -1560198380)
+        b = md5ii(b, c, d, a, x[i + 13], 21, 1309151649)
+        a = md5ii(a, b, c, d, x[i + 4], 6, -145523070)
+        d = md5ii(d, a, b, c, x[i + 11], 10, -1120210379)
+        c = md5ii(c, d, a, b, x[i + 2], 15, 718787259)
+        b = md5ii(b, c, d, a, x[i + 9], 21, -343485551)
+
+        a = safeAdd(a, olda)
+        b = safeAdd(b, oldb)
+        c = safeAdd(c, oldc)
+        d = safeAdd(d, oldd)
+      }
+      return [a, b, c, d]
+    }
+
+    /*
+     * Convert an array of little-endian words to a string
+     */
+    function binl2rstr(input) {
+      var i
+      var output = ''
+      var length32 = input.length * 32
+      for (i = 0; i < length32; i += 8) {
+        output += String.fromCharCode((input[i >> 5] >>> (i % 32)) & 0xff)
+      }
+      return output
+    }
+
+    /*
+     * Convert a raw string to an array of little-endian words
+     * Characters >255 have their high-byte silently ignored.
+     */
+    function rstr2binl(input) {
+      var i
+      var output = []
+      output[(input.length >> 2) - 1] = undefined
+      for (i = 0; i < output.length; i += 1) {
+        output[i] = 0
+      }
+      var length8 = input.length * 8
+      for (i = 0; i < length8; i += 8) {
+        output[i >> 5] |= (input.charCodeAt(i / 8) & 0xff) << (i % 32)
+      }
+      return output
+    }
+
+    /*
+     * Calculate the MD5 of a raw string
+     */
+    function rstrMD5(s) {
+      return binl2rstr(binlMD5(rstr2binl(s), s.length * 8))
+    }
+
+    /*
+     * Calculate the HMAC-MD5, of a key and some data (raw strings)
+     */
+    function rstrHMACMD5(key, data) {
+      var i
+      var bkey = rstr2binl(key)
+      var ipad = []
+      var opad = []
+      var hash
+      ipad[15] = opad[15] = undefined
+      if (bkey.length > 16) {
+        bkey = binlMD5(bkey, key.length * 8)
+      }
+      for (i = 0; i < 16; i += 1) {
+        ipad[i] = bkey[i] ^ 0x36363636
+        opad[i] = bkey[i] ^ 0x5c5c5c5c
+      }
+      hash = binlMD5(ipad.concat(rstr2binl(data)), 512 + data.length * 8)
+      return binl2rstr(binlMD5(opad.concat(hash), 512 + 128))
+    }
+
+    /*
+     * Convert a raw string to a hex string
+     */
+    function rstr2hex(input) {
+      var hexTab = '0123456789abcdef'
+      var output = ''
+      var x
+      var i
+      for (i = 0; i < input.length; i += 1) {
+        x = input.charCodeAt(i)
+        output += hexTab.charAt((x >>> 4) & 0x0f) + hexTab.charAt(x & 0x0f)
+      }
+      return output
+    }
+
+    /*
+     * Encode a string as utf-8
+     */
+    function str2rstrUTF8(input) {
+      return unescape(encodeURIComponent(input))
+    }
+
+    /*
+     * Take string arguments and return either raw or hex encoded strings
+     */
+    function rawMD5(s) {
+      return rstrMD5(str2rstrUTF8(s))
+    }
+
+    function hexMD5(s) {
+      return rstr2hex(rawMD5(s))
+    }
+
+    function rawHMACMD5(k, d) {
+      return rstrHMACMD5(str2rstrUTF8(k), str2rstrUTF8(d))
+    }
+
+    function hexHMACMD5(k, d) {
+      return rstr2hex(rawHMACMD5(k, d))
+    }
+
+    function md5(string, key, raw) {
+      if (!key) {
+        if (!raw) {
+          return hexMD5(string)
+        }
+        return rawMD5(string)
+      }
+      if (!raw) {
+        return hexHMACMD5(key, string)
+      }
+      return rawHMACMD5(key, string)
+    }
+
+    return md5(input);
+  }
+
+  function hexToBytes(hex) {
+    for (var bytes = [], c = 0; c < hex.length; c += 2)
+      bytes.push(parseInt(hex.substr(c, 2), 16));
+    return bytes;
+  }
+
+  function bytesToHex(bytes) {
+    for (var hex = [], i = 0; i < bytes.length; i++) {
+      hex.push((bytes[i] >>> 4).toString(16));
+      hex.push((bytes[i] & 0xF).toString(16));
+    }
+    return hex.join("");
+  }
+
+  // -------------------------------------------------
+
+  function generatePlanGuid(guidSeed) {
+    var key = md5lib(guidSeed);
+
+    var bytes = hexToBytes(key);
+    bytes[6] &= 0x0f;
+    bytes[6] |= 0x30;
+    bytes[8] &= 0x3f;
+    bytes[8] |= 0x80;
+
+    var finalID = bytesToHex(bytes);
+    var planGuid =  finalID.substr(0, 8) + "-" 
+                  + finalID.substr(8, 4) + "-"
+                  + finalID.substr(12, 4) + "-" 
+                  + finalID.substr(16, 4) + "-" 
+                  + finalID.substr(20, 12);
+    console.log(guidSeed, '=>', planGuid);
+    return planGuid
+  }
+
+  function sb_version(ver) { // convert semver to a numeric value for comparison
+    var semverArray = ver.split(".");
+    var versionSegments = semverArray.length;
+    var sbver = 1000000000;
+    for (var v in semverArray) {
+      sbver += parseInt(semverArray[v])*(Math.pow(1000, versionSegments-v-1))
+    }
+    return sbver;
+  }
+
+  // -------------------------------------------------
+
+  if (sb_version(currentVersion) >= 1001012009 && sb_version(currentVersion) <= 1001012012) {
+    // read properties.properties.nrplans
+    // create newPlan object
+
+    var newCollection = [];
+    for (var idx in properties.properties['.properties.nrplans'].value) {
+      var plan = properties.properties['.properties.nrplans'].value[idx];
+      newCollection.push({
+        guid:             plan.guid,
+        planName:         plan.planName,
+        planDescription:  plan.planDescription,
+        licenseKey:       plan.licenseKey,
+        planOldGuid: {
+          value: generatePlanGuid(plan.planName.value + plan.licenseKey.value),
+          type: "uuid"
+        },
+        oldPlan: {
+          value: true,
+          type: "boolean"
+        }
+      });
+    }
+    // add newCollection to properties.properties.properties['.properties.nrplans']
+    properties.properties['.properties.nrplans'] = {value: newCollection};
+  }
+
+  // -------------------------------------------------
+
+  console.log('@@@@@@@@@@@@@@@@@@@@@@@ migration script end @@@@@@@@@@@@@@@@@@@@@@@');

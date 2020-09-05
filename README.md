@@ -1,101 +1,168 @@
-# newrelic-pcf-agent-tile
-==========================================================
-- - -
+# New Relic Service Broker
 
-This repository contains the Pivotal Cloud Foundry Tile that allows you to automatically bind New Relic language agents with your applications in PCF on-prem environment for OpsMgr 1.9.x to 2.2.x.
+This project is a self-hostable application that provides a service broker which proxies New Relic credentials to applications.  This is typically useful for OSS Cloud Foundry or on-premise deployments of Cloud Foundry that you wish to easily bind to an off-premise New Relic deployment. In order to facilitate self-hosting, the application is designed to work in [Cloud Foundry][p].
 
-The latest version of the tile **"NewRelic-ServiceBrokerTile-OpsMgr-v1.12.18.pivotal"** supports PCF versions 2.2.x. 
+<br/>
 
-<p class="note warning"><strong>WARNING</strong>: Version **1.12.3** of the tile supports upgrades from 1.11.4.</p>
+## Prerequisites
 
-<p class="note warning"><strong>WARNING</strong>: If you are upgrading to tile version 1.12.0 from an older version of the tile, you need to remove the old service instances, service offerings, service broker, and the org for the old tile.</p>
+*    One or more New Relic accounts/sub-accounts
+*    A New Relic valid license key for each account.  
+ 		**Note:** You can obtain the license key for each account from your New Relic account under "Account Settings".
 
-<p class="note warning"><strong>WARNING</strong>: The current tile removes the <code>all_open</code> security group from the tile default security settings.
-If you are using a previous versions of the tile, make your PCF environment more secure by
-removing the <code>all_open</code> security group from the Application Security Group (ASG) settings. 
-The new version of the tile does not open the security, nor does it close the security if it was already open.</p>
+*    A running Cloud Foundry environment
+*	 Java Development Kit 1.8 or higher
+*    Building the application (required for deployment) requires [Maven][v]
+*    Proxy host and port details if your PCF environment requires proxy setting
 
-<p class="note warning"><strong>NOTE</strong>: In version 1.11.4 bumped up the heap memory due to requirements by the java buildpack.</p>
+<br/>
 
-<p class="note warning"><strong>NOTE</strong>: In version 1.11.3 removed the minor version number from stemcell criteria to allow users to apply stemcell security patches, and fixed discrepancy between the tile version and version number displayed on the tile.</p>
+## Installation, Deployment, and Usage Procedures
 
+_The following instructions assume that you have [created an account][c] and [installed the `cf` command line tool][l]._
 
+In order to automate the deployment process as much as possible, the project contains a Cloud Foundry [manifest][m].  To build and deploy the service broker follow the steps below:
 
-Refer to [New Relic Service Broker for PCF](http://docs.pivotal.io/partners/newrelic/index.html) for details on installation and configuration.
++ [Download New Relic Service Broker](#download-repo)
++ [Build self-executable JAR](#build-jar)
++ [Edit manifest.yml file](#edit-manifest)
++ [Push Service Broker Application to Cloud Foundry](#push-sb-app)
++ [Create Service Broker](#create-sb)
++ [Enable Access to Service Broker](#-enable-access)
++ [Create Service Instance for each Plan](#create-svc-instance)
++ [Bind the Service to your application](#bind-svc)
++ [(Optional)  Add Proxy configuration](#set-proxy)
++ [Re-Stage or re push your application](#restage-app)
 
+<br/><br/>
 
-##Prerequisites
+### <a id='download-repo'></a>Download New Relic Service Broker
 
-*    One or more New Relic accounts/sub-accounts. If you don't have one, feel free to grab one using this link: http://newrelic.com/pivotal.
-*    A New Relic valid license key for each account/sub-account. You can obtain the license key for each account from your New Relic account under 'Account Settings'
-*    An on-prem/cloud installation of Pivotal Cloud Foundry (PCF) environment with Ops Mgr privileges
-*    Proxy host and port details if your PCF environment is behind a firewall
-
-##Installation
-
-*    Download the New Relic Service Broker Tile for PCF for your environment from this repo
-*    Login to your PCF Ops Mgr 
-*    On the left side of the page click on the button **"Import a Product"**
-*    Select the downloaded **.pivotal** tile file (i.e. NewRelic-ServiceBrokerTile-OpsMgr-v1.12.13.pivotal)
-*    Allow the file upload to be completed
-
-**Note:** The system doesn't give you any indications during the upload, but you will get a pop-up message at the end, as to whether the upload succeeded or failed.
-
-
-Once the tile is uploaded to PCF environment:
-
-*    Hover your mouse on **"Newrelic Service Broker v-x.x.x"** on the left navigation in the list of **"Available Products"** that have been uploaded, and select the **"+"** sign button to add the tile
-*    Click on New Relic Tile that was just added to the "Installation Dashboard"
-*    Under **"Settings"** tab in the **"Assign AZs and Networks"** select the desired network options
-*    click the **"Save"** button and select **"New Relic Service Broker"**
-*    For every account or sub-account you want to add click the **"Add"** button on the right side
-*    Enter **"Plan Name"**, **"Plan Description"**, and your **"New Relic license key"** for each account/sub-account
-*    New Relic Service Broker 1.12.18 allows users to change New Relic license key in existing service plans. In tile versions 1.12.12 and older the plan unique guids were calculated differently, and in order for the plan services to work properly and not break the compatibility the guids must be the same as before. The <code>"migration script"</code> preserves the plan guids for existing plans in the plans collection for tile 1.12.12 and older. You could see 2 new properties labeled <strong>"pre-1.12.12 plan?"</strong> and  <strong>"Plan Guid Override (broker 1.12.12 or older)"</strong> in the plans collection for each plan in tile configuration. <strong>DO NOT CHANGE</strong> either of these properties, as they get set internally where required. For plans that were created with more recent versions of the tile than 1.12.12, leave <strong>"pre-1.12.12 plan"</strong> unchecked, and <strong>"Plan Guid Override"</strong> blank. <strong>NOTE:</strong> The only case where you need to override the "Plan Guid Override" property is when you have changed the original license key that was associated with the plan creatd by a tile version 1.12.12 or older. You can obtain the original plan guid from Cloud Controler by executing the following command and entering the original guid here in the "Plan Guid Override" property:
 ```
-  cf curl $(cf curl /v2/services?q=label:newrelic | grep "service_plans_url" | awk '{print $2}' | sed 's/[",]//g') | egrep "\"name\":|\"unique_id\":" | sed 's/[\",]//g' | tr -s " " | awk ' {name=$0; getline; printf("\t%-40s %-40s\n",name,$0)}'
+git clone https://github.com/shahramk/newrelic-service-broker.git
+cd newrelic-service-broker
 ```
 
-*    Once you have entered plans for all desired accounts, click the **"Save"** button
-*    Go back to **"Installation Dashboard"** (link on top left of the page)
-*    Click the big blue **"Apply changes"** button on top right of the page. This will take some time to finish depending how large of a PCF deployment you have.
-*    Once changes are applied, the tile will appear in the **"Marketplace"**
+<br/>
 
+### <a id='build-jar'></a>Build self-executable JAR
 
-## Using New Relic agent Tile in PCF
-
-*    Login to your PCF console
-*    Select your **"Org"** (or create new **"Org"** and **"Space"** as you wish)
-*    Go to **"Marketplace"**
-*    Select **"New Relic"** Tile and click on **"View Plan Options"**
-*    Select the plan from the left that is associated with your desired New Relic account and click on **"Select this plan"** button
-*    Fill in the **"Instance Name"**, 
-*    Select the **"space"** you'd like to use
-*    Select the **"application"** to which to bind the service
-*    Click the **"Add"** button
-
-
-## Bind the New Relic Service to your application in PCF
-
-*    Login to PCF
-*    Navigate to your application
-*    Select 'Services' tab
-*    Click the **"Bind Service"** button and bind your New Relic Service to your application
-*    If you need to use a proxy, add the following 'Env Variables' to your application:
 ```
-JAVA_OPTS="-Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn"
+$ mvn package -Dmaven.test.skip=true
+$ cf push
 ```
 
-## Restage your Application
-After Binding the New Relic service, you will need to restage your application.
-*    Login to your PCF Instance:
-    *    cf api **\<CF_API_ENDPOINT\>** [--skip-ssl-validation]
-    *    cf login -u **\<USER\>** -p **\<PASSWORD\>**
-    *    **Note:** if you have multiple **"Org"** and/or **"Space"** in your PCF, it will prompt you to select the desired org and space
-*    Restage the application you just bound to the service
-    *    cf restage **\<APPNAME\>**
-*    Login to your New Relic account to check the health of the application
+<br/>
+
+### <a id='edit-manifest'></a>Edit manifest.yml file
+
++ if necessary, specify the correct "domain" for your PCF environment
++ If you PCF environment is disconnected, change the buildpack to java offline buildpack
++ Modify the **"env:"** section at the end of the file with correct values for the following 3 environment variables:
+```
+  env:
+    SECURITY_USER_NAME: "<DIRECTOR_USER_NAME>"
+    SECURITY_USER_PASSWORD: "<DIRECTOR_PASSWORD>"
+    NRPLANS: '<A JSON ARRAY CONTAINING ONE OR MORE PLANS/LICENSE KEYS>'
+```
+
++ Update **"NRPLANS"** with correct fields for each plan (required fields: planName, licenseKey).
++ Optionally you can provide "planDescription", but it's not required
++ The "guid" field is not required for OSS Cloud Foundry
++ "oldPlan" and "planOldGuid" are required only if you are upgrading from service broker 1.12.17 or older versions
+
+The “planName” is how your developers will know which New Relic account to use for their applications.  
+Name it such that users will know which New Relic account to use.  
+**Note:** "planName" cannot contain any spaces (you can use dashes or camelCase to separate words).  
+
+The "licenseKey" value can be found in the "Account Administration" menu option from the top right corner of New Relic. 
+Plan names are free form text with no spaces, you can use dashes between words.   
+**Note:** NRPLANS json array must be defined all in one line.
 
 
+#### Environment Variables
+Following is list of the required environmenet variables with sample values, which you can define in the manifest file.
+
+| Name | Description
+| --- | -----------
+| `NRPLANS` | JSON object array with service broker plan names and New Relic account license keys associated with them. e.x. NRPLANS: '[{"planName": "hybris", "licenseKey" : "0123456789abcdef0123456789abcdef01234567", "planOldGuid": ""}, { "planName": "cloundfoundry" , "licenseKey": "1234567890abcdef", "planOldGuid": ""},  { "planName": "ecs", "licenseKey" : "0123456789abcdef0123456789abcdef89abcdef", "planOldGuid": ""}]'
+| `SECURITY_USER_NAME` | The username that Cloud Controller should use to authenticate the service. This can be any value.
+| `SECURITY_USER_PASSWORD` | The password that Cloud Controller should use to authenticate the service. This can be any value.
+
+<br/>
+
+### <a id='push-sb-app'></a>Push Service Broker Application to Cloud Foundry
+```
+cf push
+```
+
+This command will push the service broker application into Cloud Foundry and start running it.
+In the last section of the **cf push** output make note of the value for **routes** which is the url that will be used in the next step.
+
+<br/>
+
+### <a id='create-sb'></a>Create Service Broker
+```
+cf create-service-broker SERVICE_BROKER_NAME SECURITY_USER_NAME SECURITY_USER_PASSWORD URL
+```
+
+	Where:
+
+	`SERVICE_BROKER_NAME` = the service broker name determined by you
+	`SECURITY_USER_NAME` = the security user name defined from the manifest.yml file when you pushed the app
+	`SECURITY_USER_PASSWORD` = the security password defined from the manifest.yml file when you pushed the app
+	`URL` = the url from previous step prepended with protocol (http:// or https://)
+
+
+sample output:
+```
+broker: newrelic-broker
+service    plan                    access orgs   
+newrelic   New-Relic-Test          none        
+newrelic   New-Relic-Production    none        
+``` 
+
+<br/>
+
+### <a id='-enable-access'></a>Enable Access to the Service Broker
+```
+cf enable-service-access newrelic [-p PLAN] [-o ORG]
+```
+
+You can enable access to specific **"plan"** and/or for specific **"org"**
+
+<br/>
+
+### <a id='create-svc-instance'></a>Create Service Instance for each Plan
+Each service plan is associated with a New Relic Account. Create a service instance for each of the plans
+```
+cf create-service newrelic PLAN SERVICE_INSTANCE
+```
+
+	Where:
+
+	`PLAN` = servive plan name that you want to use
+	`SERVICE_INSTANCE` = name of the newly created service instance
+
+<br/>
+
+### <a id='bind-svc'></a>Bind the Service to your application
+```
+cf bind-service MY_APP MY_SERVICE_INSTANCE
+```
+
+	Where:
+
+	`MY_APP` = application name to bind to service instance
+	`MY_SERVICE_INSTANCE` = the service instance created in previous step
+
+<br/>
+
+### <a id='set-proxy'></a>(Optional)  Add Proxy configuration
+If your environment is behind a proxy, add the proxy settings to your application by setting **"JAVA_OPTS"** environment variable
+```
+cf set-env <MY_APP> JAVA_OPTS "-Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn"
+```
 **Note:** If you're using a proxy across all of your applications, you may want to implement a PCF 'Environment Variable Group' for the staging process.
 ```
 $ cf ssevg '{"JAVA_OPTS":"-Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn"}'
@@ -109,7 +176,26 @@ OK
 Variable Name   Assigned Value
 JAVA_OPTS           -Dnewrelic.config.proxy_host=proxy.yourCompany.com -Dnewrelic.config.proxy_port=nnn
 ```
-This will enable you to set the JAVA_OPTS parameters on a more global basis such that all applications would inherit the settings without the need to add application level settings to each application.   You can find more details on 
-[Environment Variable Groups](https://docs.pivotal.io/pivotalcf/devguide/deploy-apps/environment-variable.html#evgroups)
+This will enable you to set the JAVA_OPTS parameters on a more global basis such that all applications would inherit the settings without the need to add application level settings to each application. You can find more details on [Environment Variable Groups][e]
 
+<br/>
 
+### <a id='restage-app'></a>Re-stage or re-push your application
+```
+cf push
+or
+cf restage MY_APP
+```
+
+<br/><br/>
+
+## License
+The project is released under version 2.0 of the [Apache License][a].
+
+[a]: http://www.apache.org/licenses/LICENSE-2.0
+[c]: http://docs.cloudfoundry.com/docs/dotcom/getting-started.html#signup
+[l]: http://docs.cloudfoundry.com/docs/dotcom/getting-started.html#install-cf
+[m]: manifest.yml
+[p]: http://run.pivotal.io
+[v]: http://maven.apache.org
+[e]: https://docs.pivotal.io/pivotalcf/devguide/deploy-apps/environment-variable.html#evgroups

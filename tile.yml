@@ -1,12 +1,9 @@
 ---
-# The high-level description of your tile.
-# Replace these properties with real values.
-#
-name: newrelic-broker # By convention lowercase with dashes
+name: newrelic-broker
 icon_file: resources/images/nr-128x128.png
 label: New Relic Service Broker
 description: New Relic Service Broker - Bind your app to New Relic service to monitor the performance.
-metadata_version: 2.0 ## 1.9 # uncommented 11-16-17 & chgd from 1.12 to 1.11  # Optional, defaults to 1.5
+metadata_version: 2.0
 org: NewRelicServiceBroker-service-org
 space: NewRelicServiceBroker-service-space
 
@@ -259,11 +256,6 @@ packages:
     ### --------------------------------------------------------------
     ### --------------------------------------------------------------
 
-# stemcell_criteria:
-#   os: ubuntu-xenial
-#   version: '315'
-#   enable_patch_security_updates: true
-
 forms:
 - name: newrelic-broker-properties
   label: New Relic Service Broker
@@ -273,7 +265,7 @@ forms:
   - name: tile_version
     type: string
     label: Tile Version
-    default: 1.12.27
+    default: 1.12.28
     configurable: false
   - name: tile_previous_version
     type: string

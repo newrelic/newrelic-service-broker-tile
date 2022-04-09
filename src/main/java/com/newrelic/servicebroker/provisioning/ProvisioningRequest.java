@@ -41,10 +41,10 @@ final class ProvisioningRequest {
                         @JsonProperty("organization_guid") String organizationGuid,
                         @JsonProperty("space_guid") String spaceGuid, 
                         @JsonProperty("parameters") Map<String, Object> parameters) {
-        Assert.notNull(serviceId);
-        Assert.notNull(planId);
-        Assert.notNull(organizationGuid);
-        Assert.notNull(spaceGuid);
+        Assert.notNull(serviceId, "Service Id is null");
+        Assert.notNull(planId, "Plan Id is null");
+        Assert.notNull(organizationGuid, "Organization Guid is null");
+        Assert.notNull(spaceGuid, "Space Guid is null");
 
         this.serviceId = serviceId;
         this.planId = planId;

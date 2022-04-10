@@ -265,7 +265,7 @@ forms:
   - name: tile_version
     type: string
     label: Tile Version
-    default: 1.12.29
+    default: 1.12.30
     configurable: false
   - name: tile_previous_version
     type: string

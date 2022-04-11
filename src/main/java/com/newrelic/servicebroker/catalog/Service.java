@@ -85,7 +85,7 @@ final class Service {
 
     Boolean getBindable() {
         synchronized (this.monitor) {
-            Assert.notNull(this.bindable);
+            Assert.notNull(this.bindable, "Services must be bindable");
             return this.bindable;
         }
     }
@@ -117,7 +117,7 @@ final class Service {
 
     Boolean getPlan_updateable() {
         synchronized (this.monitor) {
-            Assert.notNull(this.plan_updateable);
+            Assert.notNull(this.plan_updateable, "Service is not updatable");
             return this.plan_updateable;
         }
     }

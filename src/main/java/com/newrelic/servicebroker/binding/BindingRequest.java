@@ -41,9 +41,9 @@ final class BindingRequest {
     				@JsonProperty("plan_id") String planId,
     				@JsonProperty("app_guid") String appGuid, 
     				@JsonProperty("parameters") Map<String, Object> parameters) {
-        Assert.notNull(serviceId);
-        Assert.notNull(planId);
-        Assert.notNull(appGuid);
+        Assert.notNull(serviceId, "Service Id is null");
+        Assert.notNull(planId, "Plan Id is null");
+        Assert.notNull(appGuid, "Application Giuid is null");
 
         this.serviceId = serviceId;
         this.planId = planId;

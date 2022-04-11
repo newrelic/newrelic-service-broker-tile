@@ -20,7 +20,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         auth.inMemoryAuthentication()
             .withUser(env.getProperty("SECURITY_USER_NAME"))
             .password("{noop}"+env.getProperty("SECURITY_USER_PASSWORD"))
-            .roles("USER", "ADMIN");
+            .roles("USER");
 
     }
 
@@ -33,12 +33,16 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
             .and()
             .authorizeRequests()
 
-            // .antMatchers(HttpMethod.GET, "/v2/**").hasRole("USER")
-            // .antMatchers(HttpMethod.GET, "/v2/**").hasRole("ADMIN")
-            // .antMatchers(HttpMethod.POST, "/v2/**").hasRole("USER")
-            // .antMatchers(HttpMethod.PUT, "/v2/**").hasRole("USER")
-            // .antMatchers(HttpMethod.PATCH, "/v2/**").hasRole("USER")
-            // .antMatchers(HttpMethod.DELETE, "/v2/**").hasRole("USER")
+            // .antMatchers(HttpMethod.GET, "/actuator").hasRole("USER")
+            // .antMatchers(HttpMethod.GET, "/actuator/health").hasRole("USER")
+            // .antMatchers(HttpMethod.GET, "/actuator/health/**").hasRole("USER")
+            // .antMatchers(HttpMethod.GET, "/v2/catalog").hasRole("USER")
+            // .antMatchers(HttpMethod.PUT, "/v2/service_instances/*").hasRole("USER")
+            // .antMatchers(HttpMethod.DELETE, "/v2/service_instances/*").hasRole("USER")
+            // .antMatchers(HttpMethod.DELETE, "/v2/service_instances/*/service_bindings/*").hasRole("USER")
+            // .antMatchers(HttpMethod.PUT, "/v2/service_instances/*/service_bindings/*").hasRole("USER")
+            // .antMatchers("/error").hasRole("USER")
+            // .antMatchers("/webjars/**").hasRole("USER")
 
             .antMatchers("/v2/**").hasRole("USER")
 

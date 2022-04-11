@@ -50,6 +50,7 @@ public class Application {
     }
 
     @Bean
+    @SuppressWarnings({"unchecked"})
     FilterRegistrationBean brokerApiVersionFilter() {
         FilterRegistrationBean bean = new FilterRegistrationBean();
         bean.setFilter(new BrokerApiVersionFilter());

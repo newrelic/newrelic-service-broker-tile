@@ -39,7 +39,7 @@ In order to automate the deployment process as much as possible, the project con
 ### <a id='download-repo'></a>Download New Relic Service Broker
 
 ```
-git clone https://github.com/shahramk/newrelic-service-broker.git
+git clone https://github.com/newrelic/newrelic-service-broker-tile.git
 cd newrelic-service-broker
 ```
 

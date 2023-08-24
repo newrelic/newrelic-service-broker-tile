@@ -1,11 +1,15 @@
 ---
 name: newrelic-broker
-icon_file: resources/images/nr-128x128.png
+icon_file: resources/images/NR_logo.png
 label: New Relic Service Broker
 description: New Relic Service Broker - Bind your app to New Relic service to monitor the performance.
 metadata_version: 2.0
 org: NewRelicServiceBroker-service-org
 space: NewRelicServiceBroker-service-space
+
+stemcell_criteria:
+  os: 'ubuntu-jammy'
+  version: '1.181'     #NOTE: You must quote the version to force the type to be string
 
 packages:
 - name: newrelic-broker
@@ -265,7 +269,7 @@ forms:
   - name: tile_version
     type: string
     label: Tile Version
-    default: 1.12.32
+    default: 1.12.33
     configurable: false
   - name: tile_previous_version
     type: string

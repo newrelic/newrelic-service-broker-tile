@@ -269,11 +269,11 @@ forms:
   - name: tile_version
     type: string
     label: Tile Version
-    default: 1.12.34
+    default: 1.12.36
     configurable: false
   - name: tile_previous_version
     type: string
-    default: 1.12.8
+    default: 1.12.36
     label: Previous Tile Version
     configurable: false
   - name: create_open_security_group

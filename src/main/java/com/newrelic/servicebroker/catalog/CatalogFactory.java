@@ -107,7 +107,7 @@ public class CatalogFactory {
 				
 			.metadata()
 				.displayName("New Relic")
-				.imageUrl(URI.create("http://storefront.nr-assets.net/assets/newrelic/source/NewRelic-logo-square.png"))
+				.imageUrl(URI.create("https://raw.githubusercontent.com/newrelic/newrelic-service-broker-tile/master/resources/images/NR_logo.png"))
 				.longDescription("New Relic is the all-in-one web app performance tool " +
 					"that lets you see performance from the end user experience, " +
 					"through servers, and down to the line of code.")

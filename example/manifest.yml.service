@@ -1,0 +1,13 @@
+applications:
+- name: my-app
+  memory: 1G
+  disk_quota: 512M
+  buildpacks:
+  - nginx_buildpack
+  - newrelic_nginx_buildpack
+  env:
+    STATUS_PORT: 8080
+    NRIA_LOG_LEVEL: info
+    NRIA_LOG_STDOUT: true
+  services:
+  - nr-newrelic-broker

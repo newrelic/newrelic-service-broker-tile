@@ -1,0 +1,23 @@
+integrations:
+  - name: nri-nginx
+    env:
+      METRICS: "true"
+      STATUS_URL: http://127.0.0.1:{{PORT}}/nginx_status
+      STATUS_MODULE: discover
+      REMOTE_MONITORING: true
+    interval: 30s
+    labels:
+      env: production
+      role: load_balancer
+
+  - name: nri-nginx
+    env:
+      INVENTORY: "true"
+      STATUS_URL: http://127.0.0.1:{{PORT}}/nginx_status
+      CONFIG_PATH: /home/vcap/app/nginx.conf
+      REMOTE_MONITORING: true
+    interval: 60s
+    labels:
+      env: production
+      role: load_balancer
+    inventory_source: config/nginx

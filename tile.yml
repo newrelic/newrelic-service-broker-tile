@@ -3,7 +3,7 @@ name: newrelic-broker
 icon_file: resources/images/NR_logo.png
 label: New Relic Service Broker
 description: New Relic Service Broker - Bind your app to New Relic service to monitor the performance.
-metadata_version: 2.0
+metadata_version: 3.0
 org: NewRelicServiceBroker-service-org
 space: NewRelicServiceBroker-service-space
 

@@ -36,7 +36,7 @@ public final class CredentialsTest extends AbstractSerializationTest<Credentials
 
     @Override
     protected Credentials getInstance() {
-        return new Credentials("test-license-key");
+        return new Credentials("test-license-key", "test-rpm-account-id", "test-insights-insert-key", "test-orgs");
     }
 
 }

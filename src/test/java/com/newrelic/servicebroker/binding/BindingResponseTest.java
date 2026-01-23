@@ -41,7 +41,7 @@ public final class BindingResponseTest extends AbstractSerializationTest<Binding
     }
 
     private Credentials getCredentials() {
-        return new Credentials("test-license-key");
+        return new Credentials("test-license-key", "test-rpm-account-id", "test-insights-insert-key", "test-orgs");
     }
 
 }

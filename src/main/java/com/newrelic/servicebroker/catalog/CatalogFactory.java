@@ -68,7 +68,7 @@ public class CatalogFactory {
   Catalog catalog(@Value("${NRPLANS}") String nrPlans) throws Exception {
 	
 	// 7-25-18 - replace nulls with empty string in NRPLANS json object
-	nrPlans = nrPlans.replaceAll(":\\s*null\\s*,", ":\"\",").replaceAll(":\\s*null\\s*}", ":\"\"}");
+	nrPlans = nrPlans.replaceAll(":\\s{0,10}null\\s{0,10},", ":\"\",").replaceAll(":\\s{0,10}null\\s{0,10}}", ":\"\"}");
     System.out.println("NRPLANS set to: " + nrPlans);
     
 	String serviceId = UUID.nameUUIDFromBytes("NewRelic_ServiceId_v1".getBytes()).toString();

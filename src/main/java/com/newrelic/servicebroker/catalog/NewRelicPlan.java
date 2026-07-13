@@ -131,7 +131,7 @@ public class NewRelicPlan {
   }
 
   public void setOrgs(String orgs) {
-    this.orgs = orgs.replaceAll("\\s*,\\s*", ","); //.split("\\s*,\\s*"); // return array of trimmed strings
+    this.orgs = orgs.replaceAll("\\s{0,10},\\s{0,10}", ",");
   }
   
   public String toString() {

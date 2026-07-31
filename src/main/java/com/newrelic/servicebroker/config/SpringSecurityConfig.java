@@ -47,7 +47,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
             .antMatchers("/v2/**").hasRole("USER")
 
             .and()
-            .csrf().disable()
+            .csrf().disable() // lgtm[java/spring-disabled-csrf-protection] Stateless REST API with HTTP Basic auth only; no browser clients
             .formLogin().disable();
     }
 }

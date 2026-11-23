@@ -89,6 +89,8 @@ Following is list of the required environmenet variables with sample values, whi
 | `SECURITY_USER_NAME` | The username that Cloud Controller should use to authenticate the service. This can be any value.
 | `SECURITY_USER_PASSWORD` | The password that Cloud Controller should use to authenticate the service. This can be any value.
 
+**Large number of plans:** Cloud Controller rejects app environment variables that are larger than about 43KB (roughly 170 plans). `NRPLANS` can also be set to `file:<name>`, for example `file:plans.json`. The broker then reads the plans JSON from that file, first from the jar (classpath) and then from the file system. When the tile is installed and `NRPLANS` is larger than 30,000 bytes, the tile does this for you. It adds the plans to the broker jar as `plans.json` and sets `NRPLANS` to `file:plans.json`.
+
 <br/>
 
 ### <a id='push-sb-app'></a>Push Service Broker Application to Cloud Foundry

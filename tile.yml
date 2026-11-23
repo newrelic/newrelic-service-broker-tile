@@ -181,6 +181,53 @@ packages:
 
     ### ------------------------------------------------------------
     ### --------------------------------------------------------------
+
+    ### --------------------------------------------------------------
+    ### Cloud Controller rejects app env vars larger than ~43KB, and tile generator always runs
+    ### "cf set-env NRPLANS" with the full plans JSON. If NRPLANS is large, keep the full JSON in
+    ### NRPLANS_FULL (used by post_deploy), bundle it in the broker jar as plans.json, and set
+    ### NRPLANS to the pointer "file:plans.json" so only a small value is sent to Cloud Controller.
+    ### The broker (CatalogFactory) reads the plans from the jar when NRPLANS starts with "file:".
+    NRPLANS_FULL="$NRPLANS"
+    export NRPLANS_FULL
+    NRPLANS_MAX_ENV_BYTES=30000
+    NRPLANS_BYTES=`printf '%s' "$NRPLANS" | wc -c`
+    if [ "$NRPLANS_BYTES" -gt "$NRPLANS_MAX_ENV_BYTES" ]; then
+      echo "NRPLANS is $NRPLANS_BYTES bytes, bundling plans in the broker jar"
+      NRPLANS_PKG_DIR="${PACKAGE_PATH:-/var/vcap/packages}"
+      ### packages are symlinks, so find needs -L
+      BROKER_JAR=`find -L "$NRPLANS_PKG_DIR" -name new-relic-service-broker.jar 2>/dev/null | head -1`
+      PLANS_TMP=`mktemp -d`
+      printf '%s' "$NRPLANS" > "$PLANS_TMP/plans.json"
+      NRPLANS_ADDED=false
+      if [ -n "$BROKER_JAR" ]; then
+        ### rewrite the jar without any old plans.json, keeping each entry's compression
+        ### (spring boot needs the nested jars stored, not compressed)
+        cat > "$PLANS_TMP/add_plans.py" <<'PYEOF'
+    import os, sys, zipfile
+    jar, plans = sys.argv[1], sys.argv[2]
+    name = "BOOT-INF/classes/plans.json"
+    tmp = jar + ".tmp"
+    with zipfile.ZipFile(jar) as zin, zipfile.ZipFile(tmp, "w") as zout:
+        for info in zin.infolist():
+            if info.filename != name:
+                zout.writestr(info, zin.read(info.filename))
+        zout.write(plans, name, compress_type=zipfile.ZIP_DEFLATED)
+    os.replace(tmp, jar)
+    PYEOF
+        python3 "$PLANS_TMP/add_plans.py" "$BROKER_JAR" "$PLANS_TMP/plans.json" && NRPLANS_ADDED=true
+      fi
+      if [ "$NRPLANS_ADDED" = "true" ]; then
+        export NRPLANS="file:plans.json"
+        echo "plans added to $BROKER_JAR, NRPLANS set to $NRPLANS"
+      else
+        echo "WARNING: could not add plans to the broker jar (jar: '$BROKER_JAR'), NRPLANS left as is"
+        echo "package dir contents:"; ls -laL "$NRPLANS_PKG_DIR" "$NRPLANS_PKG_DIR"/* 2>&1 | head -40
+      fi
+      rm -rf "$PLANS_TMP"
+    fi
+    ### --------------------------------------------------------------
+
   post_deploy: |
     ### --------------------------------------------------------------
     ### show settings after new service broker created
@@ -212,7 +259,7 @@ packages:
 
     ${mypython} -c "
     import json, re, os
-    data = json.loads(os.environ['NRPLANS'])
+    data = json.loads(os.environ.get('NRPLANS_FULL') or os.environ['NRPLANS'])
     for plan in data:
       orgCount = 0
       try:

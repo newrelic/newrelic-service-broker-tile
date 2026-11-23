@@ -16,7 +16,12 @@
 
 package com.newrelic.servicebroker.catalog;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.List;
 
@@ -28,6 +33,8 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.StreamUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -64,9 +71,31 @@ public class CatalogFactory {
     return null;
   }
 
+  static final String FILE_PREFIX = "file:";
+
+  /**
+   * NRPLANS is normally the plans JSON. Cloud Controller limits the size of app env vars,
+   * so it can also be "file:<name>" - the JSON is then read from the classpath (bundled
+   * in the jar by the tile pre_deploy) or, if not found there, from the file system.
+   */
+  static String resolvePlans(String nrPlans) throws IOException {
+    if (nrPlans == null || !nrPlans.trim().startsWith(FILE_PREFIX)) {
+      return nrPlans;
+    }
+    String name = nrPlans.trim().substring(FILE_PREFIX.length());
+    ClassPathResource resource = new ClassPathResource(name);
+    if (resource.exists()) {
+      try (InputStream in = resource.getInputStream()) {
+        return new String(StreamUtils.copyToByteArray(in), StandardCharsets.UTF_8);
+      }
+    }
+    return new String(Files.readAllBytes(Paths.get(name)), StandardCharsets.UTF_8);
+  }
+
   @Bean
   Catalog catalog(@Value("${NRPLANS}") String nrPlans) throws Exception {
-	
+	nrPlans = resolvePlans(nrPlans);
+
 	// 7-25-18 - replace nulls with empty string in NRPLANS json object
 	nrPlans = nrPlans.replaceAll(":\\s{0,10}null\\s{0,10},", ":\"\",").replaceAll(":\\s{0,10}null\\s{0,10}}", ":\"\"}");
     System.out.println("NRPLANS set to: " + nrPlans);
